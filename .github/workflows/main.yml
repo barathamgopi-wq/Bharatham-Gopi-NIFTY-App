@@ -19,6 +19,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
 
       - name: Generate Android Project
         run: |
@@ -46,12 +48,14 @@ jobs:
           cat > build.gradle.kts <<'EOF'
           plugins {
               id("com.android.application") version "8.7.3" apply false
+              id("org.jetbrains.kotlin.android") version "2.0.21" apply false
           }
           EOF
 
           cat > app/build.gradle.kts <<'EOF'
           plugins {
               id("com.android.application")
+              id("org.jetbrains.kotlin.android")
           }
 
           android {
@@ -62,8 +66,8 @@ jobs:
                   applicationId = "com.bharathangopi.nifty"
                   minSdk = 23
                   targetSdk = 28
-                  versionCode = 1
-                  versionName = "1.0"
+                  versionCode = 2
+                  versionName = "1.1"
               }
           }
           EOF
@@ -96,11 +100,8 @@ jobs:
           import android.webkit.WebViewClient
           import android.webkit.WebChromeClient
           import android.webkit.WebSettings
-          import android.view.View
-          import android.widget.Toast
 
           class MainActivity : Activity() {
-
               private lateinit var webView: WebView
 
               override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,13 +112,9 @@ jobs:
                   webView.settings.domStorageEnabled = true
                   webView.settings.cacheMode = WebSettings.LOAD_DEFAULT
                   webView.settings.loadsImagesAutomatically = true
-                  webView.settings.javaScriptCanOpenWindowsAutomatically = true
 
                   webView.webViewClient = WebViewClient()
                   webView.webChromeClient = WebChromeClient()
-
-                  webView.isFocusable = true
-                  webView.isFocusableInTouchMode = true
 
                   setContentView(webView)
 
@@ -126,6 +123,7 @@ jobs:
                   )
               }
 
+              @Deprecated("Deprecated in Android")
               override fun onBackPressed() {
                   if (webView.canGoBack()) {
                       webView.goBack()
@@ -137,10 +135,14 @@ jobs:
           EOF
 
       - name: Build APK
-        run: gradle assembleDebug
+        run: |
+          gradle assembleDebug
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+          test -s app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Bharatham-Gopi-NIFTY-APK
           path: app/build/outputs/apk/debug/app-debug.apk
+          
